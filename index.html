@@ -15,29 +15,19 @@
       var startRecord = document.querySelector("#startRecord");
       var stopRecord = document.querySelector("#stopRecord");
       var downloadLink = document.querySelector("#downloadLink");
-      var videoStream;
 
       window.onload = async function(){
         stopRecord.style.display = "none";
 
-        try {
-          videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } }, audio: true });
-          video.srcObject = videoStream;
-        } catch (error) {
-          console.error("Error accessing camera:", error);
-        }
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } }, audio: true });
+        video.srcObject = videoStream;
       }
 
       startRecord.onclick = function(){
         startRecord.style.display = "none";
         stopRecord.style.display = "inline";
 
-        if (!videoStream) {
-          console.error("Video stream not available.");
-          return;
-        }
-
-        var mediaRecorder = new MediaRecorder(videoStream);
+        mediaRecorder = new MediaRecorder(videoStream);
 
         let blob = [];
         mediaRecorder.addEventListener('dataavailable', function(e){
@@ -45,7 +35,7 @@
         })
 
         mediaRecorder.addEventListener('stop', function(){
-          var videoLocal = URL.createObjectURL(new Blob(blob));
+          var videoLocal = URL.createObjectURL(new Blob (blob));
           downloadLink.href = videoLocal;
         })
 
