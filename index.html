@@ -19,7 +19,7 @@
       window.onload = async function(){
         stopRecord.style.display = "none";
 
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } } });
         video.srcObject = videoStream;
       }
 
