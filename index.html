@@ -1,50 +1,80 @@
 <!DOCTYPE html>
 <html lang="en" dir="ltr">
-  <head>
-    <meta charset="utf-8">
-    <title>Video Recorder</title>
-  </head>
-  <body>
-    <video id="video" width="480" height="360" autoplay></video> <br>
-    <button id="startRecord">Start Recording</button>
-    <button id="stopRecord">Stop Recording</button>
-    <a id="downloadLink" download="video.mp4">Download Video</a>
+<head>
+<meta charset="utf-8">
+<title>Video Recorder</title>
+</head>
+<body>
+<video id="video" width="360" height="480" autoplay></video> <br>
+<button id="startRecord">Start Recording</button>
+<button id="stopRecord">Stop Recording</button>
+<a id="downloadLink" download="video.mp4">Download Video</a>
+<br>
+<video id="preview" width="360" height="480" controls></video>
+<br>
+<button id="uploadBtn">Upload Video</button>
 
-    <script type="text/javascript">
-      var video = document.querySelector("#video");
-      var startRecord = document.querySelector("#startRecord");
-      var stopRecord = document.querySelector("#stopRecord");
-      var downloadLink = document.querySelector("#downloadLink");
 
-      window.onload = async function(){
-        stopRecord.style.display = "none";
+<script type="text/javascript">
+var video = document.querySelector("#video");
+var startRecord = document.querySelector("#startRecord");
+var stopRecord = document.querySelector("#stopRecord");
+var downloadLink = document.querySelector("#downloadLink");
+var preview = document.querySelector("#preview");
+var uploadBtn = document.querySelector("#uploadBtn");
+var videoStream;
+var recordedChunks = [];
 
-        videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: 'environment' } } });
-        video.srcObject = videoStream;
-      }
 
-      startRecord.onclick = function(){
-        startRecord.style.display = "none";
-        stopRecord.style.display = "inline";
+window.onload = async function(){
+stopRecord.style.display = "none";
+videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 360 }, height: { ideal: 480 }, frameRate: { ideal: 15 } }, audio: true });
+video.srcObject = videoStream;
+}
 
-        mediaRecorder = new MediaRecorder(videoStream);
 
-        let blob = [];
-        mediaRecorder.addEventListener('dataavailable', function(e){
-          blob.push(e.data);
-        })
+startRecord.onclick = function(){
+startRecord.style.display = "none";
+stopRecord.style.display = "inline";
 
-        mediaRecorder.addEventListener('stop', function(){
-          var videoLocal = URL.createObjectURL(new Blob (blob));
-          downloadLink.href = videoLocal;
-        })
 
-        mediaRecorder.start();
-      }
+mediaRecorder = new MediaRecorder(videoStream);
 
-      stopRecord.onclick = function(){
-        mediaRecorder.stop();
-      }
-    </script>
-  </body>
+
+mediaRecorder.addEventListener('dataavailable', function(e){
+recordedChunks.push(e.data);
+});
+
+
+mediaRecorder.addEventListener('stop', function(){
+var videoLocal = URL.createObjectURL(new Blob (recordedChunks));
+downloadLink.href = videoLocal;
+preview.src = videoLocal;
+});
+
+
+mediaRecorder.start();
+}
+
+
+stopRecord.onclick = function(){
+mediaRecorder.stop();
+}
+
+
+uploadBtn.onclick = function() {
+var blob = new Blob(recordedChunks, { type: 'video/mp4' });
+var formData = new FormData();
+formData.append('video', blob, 'video.mp4');
+fetch('/videoRecorder/upload', {
+method: 'POST',
+body: formData
+}).then(response => {
+}).catch(error => {
+console.error(error);
+alert('Error uploading video.');
+});
+}
+</script>
+</body>
 </html>
