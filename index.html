@@ -1,66 +1,39 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-  <title>Record dan Play Video</title>
-  <link href="https://vjs.zencdn.net/7.16.0/video-js.css" rel="stylesheet">
-  <script src="https://vjs.zencdn.net/7.16.0/video.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Record and Play Video</title>
+    <style>
+        #video-container {
+            width: 500px;
+            height: 300px;
+            margin: 0 auto;
+        }
+
+        #video-element {
+            width: 100%;
+            height: 100%;
+        }
+
+        #record-button, #play-button {
+            padding: 10px;
+            margin: 10px;
+            border: 1px solid #ccc;
+            cursor: pointer;
+        }
+    </style>
 </head>
 <body>
-  <div id="video-container"></div>
+    <div id="video-container">
+        <video id="video-element" controls></video>
+    </div>
 
-  <script>
-    const videoContainer = document.getElementById('video-container');
+    <button id="record-button">Record</button>
+    <button id="play-button" disabled>Play</button>
 
-    const videoPlayer = videojs(videoContainer, {
-      controls: true,
-      autoplay: false,
-      width: 640,
-      height: 360,
-    });
+    <script src="script.js"></script>
 
-    // Memeriksa dukungan untuk record video
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-      // Mendapatkan akses ke media kamera dan mikrofon
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(stream => {
-          // Mengatur source video player dengan stream
-          videoPlayer.srcObject = stream;
-
-          // Menambahkan tombol record
-          const recordButton = document.createElement('button');
-          recordButton.textContent = 'Record';
-          recordButton.addEventListener('click', () => {
-            // Memulai perekaman video
-            if (videoPlayer.recorder) {
-              videoPlayer.recorder.stopRecording();
-              recordButton.textContent = 'Record';
-            } else {
-              videoPlayer.recorder = new MediaRecorder(stream);
-              videoPlayer.recorder.start();
-              recordButton.textContent = 'Stop';
-            }
-          });
-          videoContainer.appendChild(recordButton);
-
-          // Menambahkan tombol play
-          const playButton = document.createElement('button');
-          playButton.textContent = 'Play';
-          playButton.disabled = true;
-          playButton.addEventListener('click', () => {
-            // Memutar video yang direkam
-            const videoBlob = videoPlayer.recorder.stopRecording();
-            const videoUrl = URL.createObjectURL(videoBlob);
-            videoPlayer.src = videoUrl;
-            playButton.disabled = false;
-          });
-          videoContainer.appendChild(playButton);
-        })
-        .catch(error => {
-          console.error('Gagal mendapatkan akses media:', error);
-        });
-    } else {
-      console.error('Browser Anda tidak mendukung record video.');
-    }
-  </script>
+    <script src="https://github.com/Kagami/webm.js?files=1"></script>
 </body>
 </html>
