@@ -20,39 +20,38 @@
       var recordButton = document.getElementById('recordButton');
       var stopButton = document.getElementById('stopButton');
       var mediaRecorder;
-      var chunks = [];
+      var recordedChunks = [];
 
-      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-      .then(function(stream) {
-        videoElement.srcObject = stream;
-        mediaRecorder = new MediaRecorder(stream);
+      recordButton.onclick = startRecording;
+      stopButton.onclick = stopRecording;
 
-        recordButton.onclick = function() {
+      function startRecording() {
+        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(function(stream) {
+          videoElement.srcObject = stream;
+          mediaRecorder = new MediaRecorder(stream);
+          mediaRecorder.ondataavailable = function(event) {
+            recordedChunks.push(event.data);
+          };
+          mediaRecorder.onstop = function() {
+            var recordedBlob = new Blob(recordedChunks, { 'type' : 'video/mp4' });
+            recordedChunks = [];
+            videoElement.src = URL.createObjectURL(recordedBlob);
+          };
           mediaRecorder.start();
           recordButton.disabled = true;
           stopButton.disabled = false;
-        }
+        })
+        .catch(function(err) {
+          console.log('Error accessing media devices: ' + err);
+        });
+      }
 
-        stopButton.onclick = function() {
-          mediaRecorder.stop();
-          recordButton.disabled = false;
-          stopButton.disabled = true;
-        }
-
-        mediaRecorder.ondataavailable = function(event) {
-          chunks.push(event.data);
-        }
-
-        mediaRecorder.onstop = function() {
-          var blob = new Blob(chunks, { 'type' : 'video/mp4' });
-          chunks = [];
-          var videoURL = window.URL.createObjectURL(blob);
-          videoElement.src = videoURL;
-        }
-      })
-      .catch(function(err) {
-        console.log('Error accessing media devices: ' + err);
-      });
+      function stopRecording() {
+        mediaRecorder.stop();
+        recordButton.disabled = false;
+        stopButton.disabled = true;
+      }
     });
   </script>
 </body>
