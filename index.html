@@ -1,58 +1,66 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Video Recorder & Player</title>
-  <link href="https://vjs.zencdn.net/7.16.0/video-js.css" rel="stylesheet">
-  <script src="https://vjs.zencdn.net/7.16.0/video.js"></script>
+  <title>Record dan Play Video</title>
+  <link rel="stylesheet" href="https://videojs.com/videojs.css">
+  <script src="https://videojs.com/video.js"></script>
 </head>
 <body>
-  <div>
-    <video id="myVideo" class="video-js vjs-default-skin" controls></video>
-    <button id="recordButton">Record</button>
-    <button id="stopButton" disabled>Stop</button>
-  </div>
+  <div id="video-container"></div>
 
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-      var videoElement = document.getElementById('myVideo');
-      var recordButton = document.getElementById('recordButton');
-      var stopButton = document.getElementById('stopButton');
-      var mediaRecorder;
-      var recordedChunks = [];
+    const videoContainer = document.getElementById('video-container');
 
-      recordButton.onclick = startRecording;
-      stopButton.onclick = stopRecording;
-
-      function startRecording() {
-        navigator.mediaDevices.getUserMedia({ video: true, audio: true })
-        .then(function(stream) {
-          videoElement.srcObject = stream;
-          mediaRecorder = new MediaRecorder(stream);
-          mediaRecorder.ondataavailable = function(event) {
-            recordedChunks.push(event.data);
-          };
-          mediaRecorder.onstop = function() {
-            var recordedBlob = new Blob(recordedChunks, { 'type' : 'video/mp4' });
-            recordedChunks = [];
-            videoElement.src = URL.createObjectURL(recordedBlob);
-          };
-          mediaRecorder.start();
-          recordButton.disabled = true;
-          stopButton.disabled = false;
-        })
-        .catch(function(err) {
-          console.log('Error accessing media devices: ' + err);
-        });
-      }
-
-      function stopRecording() {
-        mediaRecorder.stop();
-        recordButton.disabled = false;
-        stopButton.disabled = true;
-      }
+    const videoPlayer = videojs(videoContainer, {
+      controls: true,
+      autoplay: false,
+      width: 640,
+      height: 360,
     });
+
+    // Memeriksa dukungan untuk record video
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+      // Mendapatkan akses ke media kamera dan mikrofon
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+        .then(stream => {
+          // Mengatur source video player dengan stream
+          videoPlayer.srcObject = stream;
+
+          // Menambahkan tombol record
+          const recordButton = document.createElement('button');
+          recordButton.textContent = 'Record';
+          recordButton.addEventListener('click', () => {
+            // Memulai perekaman video
+            if (videoPlayer.recorder) {
+              videoPlayer.recorder.stopRecording();
+              recordButton.textContent = 'Record';
+            } else {
+              videoPlayer.recorder = new MediaRecorder(stream);
+              videoPlayer.recorder.start();
+              recordButton.textContent = 'Stop';
+            }
+          });
+          videoContainer.appendChild(recordButton);
+
+          // Menambahkan tombol play
+          const playButton = document.createElement('button');
+          playButton.textContent = 'Play';
+          playButton.disabled = true;
+          playButton.addEventListener('click', () => {
+            // Memutar video yang direkam
+            const videoBlob = videoPlayer.recorder.stopRecording();
+            const videoUrl = URL.createObjectURL(videoBlob);
+            videoPlayer.src = videoUrl;
+            playButton.disabled = false;
+          });
+          videoContainer.appendChild(playButton);
+        })
+        .catch(error => {
+          console.error('Gagal mendapatkan akses media:', error);
+        });
+    } else {
+      console.error('Browser Anda tidak mendukung record video.');
+    }
   </script>
 </body>
 </html>
