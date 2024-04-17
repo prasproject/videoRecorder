@@ -1,84 +1,59 @@
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="en">
 <head>
-  <meta charset="utf-8">
-  <title>Video Recorder</title>
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video Recorder & Player</title>
+  <link href="https://vjs.zencdn.net/7.16.0/video-js.css" rel="stylesheet">
+  <script src="https://vjs.zencdn.net/7.16.0/video.js"></script>
 </head>
 <body>
-<video id="video" width="360" height="480" autoplay></video> <br>
-<button id="startRecord">Start Recording</button>
-<button id="stopRecord">Stop Recording</button>
-<a id="downloadLink" download="video.mp4">Download Video</a>
-<br>
-<video id="preview" width="360" height="480" controls></video>
-<br>
-<button id="uploadBtn">Upload Video</button>
+  <div>
+    <video id="myVideo" class="video-js vjs-default-skin" controls></video>
+    <button id="recordButton">Record</button>
+    <button id="stopButton" disabled>Stop</button>
+  </div>
 
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      var videoElement = document.getElementById('myVideo');
+      var recordButton = document.getElementById('recordButton');
+      var stopButton = document.getElementById('stopButton');
+      var mediaRecorder;
+      var chunks = [];
 
-<script type="text/javascript">
-var video = document.querySelector("#video");
-var startRecord = document.querySelector("#startRecord");
-var stopRecord = document.querySelector("#stopRecord");
-var downloadLink = document.querySelector("#downloadLink");
-var preview = document.querySelector("#preview");
-var uploadBtn = document.querySelector("#uploadBtn");
-var videoStream;
-var recordedChunks = [];
+      navigator.mediaDevices.getUserMedia({ video: true, audio: true })
+      .then(function(stream) {
+        videoElement.srcObject = stream;
+        mediaRecorder = new MediaRecorder(stream);
 
+        recordButton.onclick = function() {
+          mediaRecorder.start();
+          recordButton.disabled = true;
+          stopButton.disabled = false;
+        }
 
-window.onload = async function(){
-stopRecord.style.display = "none";
-videoStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment", width: { ideal: 360 }, height: { ideal: 480 }, frameRate: { ideal: 15 } }, audio: true });
-video.srcObject = videoStream;
-}
+        stopButton.onclick = function() {
+          mediaRecorder.stop();
+          recordButton.disabled = false;
+          stopButton.disabled = true;
+        }
 
+        mediaRecorder.ondataavailable = function(event) {
+          chunks.push(event.data);
+        }
 
-startRecord.onclick = function(){
-startRecord.style.display = "none";
-stopRecord.style.display = "inline";
-
-
-mediaRecorder = new MediaRecorder(videoStream);
-
-
-mediaRecorder.addEventListener('dataavailable', function(e){
-recordedChunks.push(e.data);
-});
-
-
-mediaRecorder.addEventListener('stop', function(){
-var videoLocal = URL.createObjectURL(new Blob (recordedChunks));
-downloadLink.href = videoLocal;
-preview.src = videoLocal;
-});
-
-
-mediaRecorder.start();
-}
-
-
-stopRecord.onclick = function(){
-mediaRecorder.stop();
-}
-
-
-uploadBtn.onclick = function() {
-var blob = new Blob(recordedChunks, { type: 'video/mp4' });
-var formData = new FormData();
-formData.append('video', blob, 'video.mp4');
-fetch('/videoRecorder/upload', {
-method: 'POST',
-body: formData
-}).then(response => {
-}).catch(error => {
-console.error(error);
-alert('Error uploading video.');
-});
-}
-</script>
+        mediaRecorder.onstop = function() {
+          var blob = new Blob(chunks, { 'type' : 'video/mp4' });
+          chunks = [];
+          var videoURL = window.URL.createObjectURL(blob);
+          videoElement.src = videoURL;
+        }
+      })
+      .catch(function(err) {
+        console.log('Error accessing media devices: ' + err);
+      });
+    });
+  </script>
 </body>
 </html>
